@@ -3,9 +3,18 @@
 # Before using this script, create a public key with empty password using ssh-keygen, 
 # then add your ~/.ssh/id_rsa.pub to ~/.ssh/authorized_keys for all remote nodes.
 
-USER="semfix"
-NODES=( 127.0.0.1 )
-PORT=3022
+USER="sadm"
+NODES=(genprogexp-1-i.comp.nus.edu.sg
+       genprogexp-2-i.comp.nus.edu.sg
+       genprogexp-3-i.comp.nus.edu.sg
+       genprogexp-4-i.comp.nus.edu.sg
+       genprogexp-5-i.comp.nus.edu.sg
+       genprogexp-6-i.comp.nus.edu.sg
+       genprogexp-7-i.comp.nus.edu.sg
+       genprogexp-8-i.comp.nus.edu.sg
+       genprogexp-9-i.comp.nus.edu.sg
+       genprogexp-10-i.comp.nus.edu.sg)
+PORT=22 # 3022 for my localhost VM
 
 SESSION=seryozha-experiments
 
