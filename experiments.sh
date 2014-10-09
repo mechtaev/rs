@@ -52,6 +52,11 @@ exec_remote() {
     $SSH $USER@$node "rm ~/$SUCCEEDED ~/$FAILED 2> /dev/null; screen -S $SESSION -p 0 -X stuff \"$cmd\"; screen -S $SESSION -p 0 -X eval 'stuff \\015'"
 }
 
+send_sigint() {
+    node=$1
+    $SSH $USER@$node "screen -S $SESSION -p 0 -X eval 'stuff \\003'"
+}
+
 check_status() {
     node=$1
     printf "Node: %s\n" $node 
@@ -66,12 +71,12 @@ check_status() {
 
 
 case "$1" in
-    start)
+    up)
         for node in "${NODES[@]}"; do
             start_session $node
         done
         ;;
-    stop)
+    down)
         for node in "${NODES[@]}"; do
             stop_session $node
         done
@@ -81,11 +86,10 @@ case "$1" in
             exec_remote $node "$2"
         done
         ;;
-    submit)
-        echo "not implemented"
-        # for node in "${NODES[@]}"; do
-        #     submit_task $node "$2"
-        # done
+    sigint)
+        for node in "${NODES[@]}"; do
+            send_sigint $node
+        done
         ;;
     status)
         for node in "${NODES[@]}"; do
@@ -93,7 +97,7 @@ case "$1" in
         done
         ;;
     *)
-        echo "Usage: `basename $0` { start | stop | exec CMD | submit TASK | status }"
+        echo "Usage: `basename $0` { up | down | exec CMD | sigint | status }"
         exit 0
         ;;
 esac
