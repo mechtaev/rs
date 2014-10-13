@@ -1,0 +1,7 @@
+alias up='./experiments.sh up'
+alias down='./experiments.sh down'
+alias exec='./experiments.sh exec'
+alias copy='./experiments.sh copy'
+alias sigint='./experiments.sh sigint'
+alias status='./experiments.sh status'
+alias help='./experiments.sh help'

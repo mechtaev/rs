@@ -1,0 +1,4 @@
+export EXP_ID=seryozha
+export EXP_USER=sadm
+export EXP_CLUSTER=genprogexp-1-i.comp.nus.edu.sg:genprogexp-2-i.comp.nus.edu.sg:genprogexp-3-i.comp.nus.edu.sg:genprogexp-4-i.comp.nus.edu.sg:genprogexp-5-i.comp.nus.edu.sg:genprogexp-6-i.comp.nus.edu.sg:genprogexp-7-i.comp.nus.edu.sg:genprogexp-8-i.comp.nus.edu.sg:genprogexp-9-i.comp.nus.edu.sg:genprogexp-10-i.comp.nus.edu.sg
+export EXP_PORT=22

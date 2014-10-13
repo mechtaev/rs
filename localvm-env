@@ -1,0 +1,4 @@
+export EXP_ID=seryozha
+export EXP_USER=semfix
+export EXP_CLUSTER=127.0.0.1
+export EXP_PORT=3022
