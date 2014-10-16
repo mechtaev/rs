@@ -7,22 +7,22 @@
 
 if [[ -z "$EXP_ID" ]]; then
     echo "Specify experiments identifier EXP_ID"
-    exit 0
+    exit -1
 fi
 
 if [[ -z "$EXP_USER" ]]; then
     echo "Specify cluster user EXP_USER"
-    exit 0
+    exit -1
 fi
 
 if [[ -z "$EXP_CLUSTER" ]]; then
     echo "Specify cluster addresses using colon-separated list EXP_CLUSTER"
-    exit 0
+    exit -1
 fi
 
 if [[ -z "$EXP_PORT" ]]; then
     echo "Specify cluster ssh port EXP_PORT"
-    exit 0
+    exit -1
 fi
 
 IFS=: read -a NODES <<<$EXP_CLUSTER
@@ -57,10 +57,21 @@ get_screen() {
     cat $tmp_local
 }
 
+send_sigint() {
+    node=$1
+    $SSH $EXP_USER@$node "screen -S $SESSION -p 0 -X eval 'stuff \\003'"
+}
+
+send_command() {
+    node=$1
+    $SSH $EXP_USER@$node "screen -S $SESSION -p 0 -X stuff \"$2\"; screen -S $SESSION -p 0 -X eval 'stuff \\015'"
+}
+
 exec_remote() {
     node=$1
     cmd="$2; if [[ \\\$? -eq 0 ]]; then touch ~/$SUCCEEDED; else touch ~/$FAILED; fi"
-    $SSH $EXP_USER@$node "rm ~/$SUCCEEDED ~/$FAILED 2> /dev/null; screen -S $SESSION -p 0 -X stuff \"$cmd\"; screen -S $SESSION -p 0 -X eval 'stuff \\015'"
+    $SSH $EXP_USER@$node "rm ~/$SUCCEEDED ~/$FAILED 2> /dev/null"
+    send_command $node "$cmd"
 }
 
 send_files() {
@@ -70,11 +81,6 @@ send_files() {
     $SCP -r $from $EXP_USER@$node:$to
 }
 
-
-send_sigint() {
-    node=$1
-    $SSH $EXP_USER@$node "screen -S $SESSION -p 0 -X eval 'stuff \\003'"
-}
 
 check_status() {
     node=$1
@@ -115,13 +121,18 @@ case "$1" in
             send_sigint $node
         done
         ;;
+    send)
+        for node in $NODES; do
+            send_command $node $2
+        done
+        ;;
     status)
         for node in $NODES; do
             check_status $node
         done
         ;;
     *)
-        echo "Usage: `basename $0` { up | down | exec CMD | copy PATH PATH | sigint | status }"
+        echo "Usage: `basename $0` { up | down | exec CMD | copy PATH PATH | send CMD | sigint | status }"
         exit 0
         ;;
 esac
