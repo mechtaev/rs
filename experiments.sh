@@ -131,8 +131,21 @@ case "$1" in
             check_status $node
         done
         ;;
+    help)
+        echo "Usage: `basename $0` { up | down | exec CMD | copy PATH PATH | send CMD | sigint | status | help}"
+        echo "Sending commands to screen sessions on remote hosts."
+        echo ""
+        echo "up         start remote screen sessions"
+        echo "down       terminate remote screen sessions"
+        echo "exec CMD   execute CMD in each remote screen session and save its exit status"
+        echo "copy S D   copy file S to each node to the location D"
+        echo "send CMD   send CMD to each remote screen session followed by ENTER"
+        echo "sigint     send SIGINT to each remote screen session"
+        echo "status     check status of the last command at each node and print screen fragment"
+        echo "help       show this message"
+        ;;
     *)
-        echo "Usage: `basename $0` { up | down | exec CMD | copy PATH PATH | send CMD | sigint | status }"
+        echo "Usage: `basename $0` { up | down | exec CMD | copy PATH PATH | send CMD | sigint | status | help}"
         exit 0
         ;;
 esac
