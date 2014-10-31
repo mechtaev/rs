@@ -169,7 +169,7 @@ case "$1" in
             else
                 destination="$3"
                 for node in $NODES; do
-                    receive_files $node $source $destination
+                    receive_files $node $source "${destination}-$node"
                 done
             fi
         fi
