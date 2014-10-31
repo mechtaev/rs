@@ -34,14 +34,14 @@ start_session() {
     session=$1
     node=$2
     $SSH $RS_USER@$node "screen -dmS $session"
-    echo "session $session is started"
+    echo "Session $session is started"
 }
 
 stop_session() {
     session=$1
     node=$2
     $SSH $RS_USER@$node "screen -S $session -p 0 -X kill"
-    echo "session $session is stoped"
+    echo "Session $session is stopped"
 }
 
 get_screen() {
@@ -90,7 +90,6 @@ receive_files() {
     $SCP -r $RS_USER@$node:$from $to
 }
 
-
 check_status() {
     session=$1
     node=$2
@@ -106,7 +105,6 @@ check_status() {
     fi
     printf "${CO}" ""; get_screen $session $node; printf "${NC}" ""
 }
-
 
 case "$1" in
     start)
@@ -168,6 +166,10 @@ case "$1" in
                 echo "Specify destination"
             else
                 destination="$3"
+                if [ -d "$destination" ]; then
+                    echo "ERROR: destination should be a file"
+                    exit -1
+                fi
                 for node in $NODES; do
                     receive_files $node $source "${destination}-$node"
                 done
@@ -216,8 +218,8 @@ case "$1" in
         echo "    start SESSION                 start remote screen sessions"
         echo "    stop SESSION                  terminate remote screen sessions"
         echo "    exec SESSION CMD              execute CMD in each remote screen session and save its exit status"
-        echo "    upload SOURCE DENTINATION     copy file S to each node to the location D"
-        echo "    download SOURCE DESTINATION   copy file S to each node to the location D"
+        echo "    upload SOURCE DESTINATION     copy file SOURCE to each node to the location DESTINATION"
+        echo "    download SOURCE DESTINATION   copy file SOURCE to each node to the location DESTINATION"
         echo "    send SESSION CMD              send CMD to each remote screen session followed by ENTER"
         echo "    sigint SESSION                send SIGINT to each remote screen session"
         echo "    status SESSION                check status of last command at each node and print screen fragment"
