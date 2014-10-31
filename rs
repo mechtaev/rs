@@ -71,8 +71,8 @@ exec_remote() {
     node=$2
     succeeded=".${session}-task-succeeded"
     failed=".${session}-task-failed"
-    cmd="$3; if [[ \\\$? -eq 0 ]]; then touch ~/$SUCCEEDED; else touch ~/$FAILED; fi"
-    $SSH $RS_USER@$node "rm ~/$SUCCEEDED ~/$FAILED 2> /dev/null"
+    cmd="$3; if [[ \\\$? -eq 0 ]]; then touch ~/$succeeded; else touch ~/$failed; fi"
+    $SSH $RS_USER@$node "rm ~/$succeeded ~/$failed 2> /dev/null"
     send_command $session $node "$cmd"
 }
 
@@ -104,7 +104,7 @@ check_status() {
     else
         printf "%s\n" "Status: IN PROGRESS"
     fi
-    printf "${CO}" ""; get_screen $node; printf "${NC}" ""
+    printf "${CO}" ""; get_screen $session $node; printf "${NC}" ""
 }
 
 
