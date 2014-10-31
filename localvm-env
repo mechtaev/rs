@@ -1,4 +1,3 @@
-export EXP_ID=seryozha
-export EXP_USER=semfix
-export EXP_CLUSTER=127.0.0.1
-export EXP_PORT=3022
+export RS_USER=semfix
+export RS_CLUSTER=127.0.0.1
+export RS_PORT=3022
