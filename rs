@@ -241,7 +241,7 @@ case "$1" in
             else
                 command="$3"
                 for node in $NODES; do
-                    send_command $node "$command"
+                    send_command $session $node "$command"
                 done
             fi
         fi
