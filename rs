@@ -1,4 +1,21 @@
 #!/bin/bash
+#
+# rs
+# Copyright (C) 2014 Sergey Mechtaev
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
+
 
 # Bash script for running commands on a cluster using screen
 #
@@ -6,6 +23,7 @@
 #   (1) define RS_USER, RS_CLUSTER, RS_PORT variables
 #   (2) create a public key with empty password using ssh-keygen,
 #       then add your ~/.ssh/id_rsa.pub to ~/.ssh/authorized_keys for all remote nodes.
+
 
 if [[ -z "$RS_USER" ]]; then
     echo "Specify cluster user RS_USER"
@@ -22,7 +40,7 @@ if [[ -z "$RS_PORT" ]]; then
     exit -1
 fi
 
-IFS=: read -a NODES <<<$RS_CLUSTER
+IFS=: read -a NODES <<< $RS_CLUSTER
 
 SSH="ssh -q -p $RS_PORT"
 SCP="scp -q -P $RS_PORT"
@@ -33,15 +51,23 @@ NC='\e[0m' # No Color
 start_session() {
     session=$1
     node=$2
-    $SSH $RS_USER@$node "screen -dmS $session"
-    echo "Session $session is started"
+    status=$($SSH $RS_USER@$node "screen -dmS $session" 2>&1)
+    if [[ ! -z $status ]]; then
+        echo "Error at ${node}: $status"
+    else
+        echo "Session $session is started at $node"
+    fi
 }
 
 stop_session() {
     session=$1
     node=$2
-    $SSH $RS_USER@$node "screen -S $session -p 0 -X kill"
-    echo "Session $session is stopped"
+    status=$($SSH $RS_USER@$node "screen -S $session -p 0 -X kill" 2>&1)
+    if [[ ! -z $status ]]; then
+        echo "Error at ${node}: $status"
+    else
+        echo "Session $session is stoped at $node"
+    fi
 }
 
 get_screen() {
@@ -49,21 +75,33 @@ get_screen() {
     node=$2
     tmp_remote=`$SSH $RS_USER@$node mktemp`
     tmp_local=`mktemp`
-    $SSH $RS_USER@$node "screen -S $session -p 0 -X hardcopy $tmp_remote"
-    $SCP $RS_USER@$node:$tmp_remote $tmp_local
-    cat $tmp_local
+    status=$($SSH $RS_USER@$node "screen -S $session -p 0 -X hardcopy $tmp_remote" 2>&1)
+    if [[ ! -z $status ]]; then
+        echo "Error at ${node}: $status"
+    fi
+    status=$($SCP $RS_USER@$node:$tmp_remote $tmp_local 2>&1)
+    if [[ ! -z $status ]]; then
+        echo "Error at ${node}: $status"
+    fi
+    cat $tmp_local | grep -v '^$'
 }
 
 send_sigint() {
     session=$1
     node=$2
-    $SSH $RS_USER@$node "screen -S $session -p 0 -X eval 'stuff \\003'"
+    status=$($SSH $RS_USER@$node "screen -S $session -p 0 -X eval 'stuff \\003'" 2>&1)
+    if [[ ! -z $status ]]; then
+        echo "Error at ${node}: $status"
+    fi
 }
 
 send_command() {
     session=$1
     node=$2
-    $SSH $RS_USER@$node "screen -S $session -p 0 -X stuff \"$3\"; screen -S $session -p 0 -X eval 'stuff \\015'"
+    status=$($SSH $RS_USER@$node "screen -S $session -p 0 -X stuff \"$3\"; screen -S $session -p 0 -X eval 'stuff \\015'" 2>&1)
+    if [[ ! -z $status ]]; then
+        echo "Error at ${node}: $status"
+    fi
 }
 
 exec_remote() {
@@ -71,8 +109,11 @@ exec_remote() {
     node=$2
     succeeded=".${session}-task-succeeded"
     failed=".${session}-task-failed"
-    cmd="$3; if [[ \\\$? -eq 0 ]]; then touch ~/$succeeded; else touch ~/$failed; fi"
-    $SSH $RS_USER@$node "rm ~/$succeeded ~/$failed 2> /dev/null"
+    cmd="clear; $3; if [[ \\\$? -eq 0 ]]; then touch ~/$succeeded; else touch ~/$failed; fi"
+    status=$($SSH $RS_USER@$node "rm ~/$succeeded ~/$failed 2> /dev/null" 2>&1)
+    if [[ ! -z $status ]]; then
+        echo "Error at ${node}: $status"
+    fi
     send_command $session $node "$cmd"
 }
 
@@ -80,14 +121,20 @@ send_files() {
     node=$1
     from=$2
     to=$3
-    $SCP -r $from $RS_USER@$node:$to
+    status=$($SCP -r $from $RS_USER@$node:$to 2>&1)
+    if [[ ! -z $status ]]; then
+        echo "Error at ${node}: $status"
+    fi
 }
 
 receive_files() {
     node=$1
     from=$2
     to=$3
-    $SCP -r $RS_USER@$node:$from $to
+    status=$($SCP -r $RS_USER@$node:$from $to 2>&1)
+    if [[ ! -z $status ]]; then
+        echo "Error at ${node}: $status"
+    fi
 }
 
 check_status() {
@@ -95,13 +142,11 @@ check_status() {
     node=$2
     succeeded=".${session}-task-succeeded"
     failed=".${session}-task-failed"
-    printf "Node: %s\n" $node
-    printf "Session: %s\n" $session
     status=$($SSH $RS_USER@$node "[[ -f ~/$succeeded ]] && echo SUCCESS; [[ -f ~/$failed ]] && echo FAIL")
     if [[ -n "$status" ]]; then
-        printf "%s\n" "Status: $status"
+        printf "%s at %s (session %s)\n" "$status" "$node" "$session"
     else
-        printf "%s\n" "Status: IN PROGRESS"
+        printf "%s at %s (session %s)\n" "IN PROGRESS" "$node" "$session"
     fi
     printf "${CO}" ""; get_screen $session $node; printf "${NC}" ""
 }
@@ -135,9 +180,9 @@ case "$1" in
             if [[ -z "$3" ]]; then
                 echo "Specify command"
             else
-                cmd="$3"
+                command="$3"
                 for node in $NODES; do
-                    exec_remote $session $node "$cmd"
+                    exec_remote $session $node "$command"
                 done
             fi
         fi
@@ -194,9 +239,9 @@ case "$1" in
             if [[ -z "$3" ]]; then
                 echo "Specify command"
             else
-                cmd="$3"
+                command="$3"
                 for node in $NODES; do
-                    send_command $node "$cmd"
+                    send_command $node "$command"
                 done
             fi
         fi
@@ -212,14 +257,15 @@ case "$1" in
         fi
         ;;
     help)
+        echo "Bash script for running commands on a cluster using screen"
         echo "Usage: `basename $0` CMD"
         echo ""
         echo "CMD"
         echo "    start SESSION                 start remote screen sessions"
         echo "    stop SESSION                  terminate remote screen sessions"
         echo "    exec SESSION CMD              execute CMD in each remote screen session and save its exit status"
-        echo "    upload SOURCE DESTINATION     copy file SOURCE to each node to the location DESTINATION"
-        echo "    download SOURCE DESTINATION   copy file SOURCE to each node to the location DESTINATION"
+        echo "    upload SOURCE DESTINATION     copy file SOURCE to each node to location DESTINATION"
+        echo "    download SOURCE DESTINATION   copy file SOURCE to each node to location DESTINATION"
         echo "    send SESSION CMD              send CMD to each remote screen session followed by ENTER"
         echo "    sigint SESSION                send SIGINT to each remote screen session"
         echo "    status SESSION                check status of last command at each node and print screen fragment"
