@@ -40,7 +40,7 @@ if [[ -z "$RS_PORT" ]]; then
     exit -1
 fi
 
-IFS=: read -a NODES <<< $RS_CLUSTER
+IFS=: read -ra NODES <<< "$RS_CLUSTER"
 
 SSH="ssh -q -p $RS_PORT"
 SCP="scp -q -P $RS_PORT"
@@ -157,7 +157,7 @@ case "$1" in
             echo "Specify session name"
         else
             session=$2
-            for node in $NODES; do
+            for node in "${NODES[@]}"; do
                 start_session $session $node
             done
         fi
@@ -167,7 +167,7 @@ case "$1" in
             echo "Specify session name"
         else
             session=$2
-            for node in $NODES; do
+            for node in "${NODES[@]}"; do
                 stop_session $session $node
             done
         fi
@@ -181,7 +181,7 @@ case "$1" in
                 echo "Specify command"
             else
                 command="$3"
-                for node in $NODES; do
+                for node in "${NODES[@]}"; do
                     exec_remote $session $node "$command"
                 done
             fi
@@ -196,7 +196,7 @@ case "$1" in
                 echo "Specify destination"
             else
                 destination="$3"
-                for node in $NODES; do
+                for node in "${NODES[@]}"; do
                     send_files $node $source $destination
                 done
             fi
@@ -215,7 +215,7 @@ case "$1" in
                     echo "ERROR: destination should be a file"
                     exit -1
                 fi
-                for node in $NODES; do
+                for node in "${NODES[@]}"; do
                     receive_files $node $source "${destination}-$node"
                 done
             fi
@@ -226,7 +226,7 @@ case "$1" in
             echo "Specify session name"
         else
             session=$2
-            for node in $NODES; do
+            for node in "${NODES[@]}"; do
                 send_sigint $session $node
             done
         fi
@@ -240,7 +240,7 @@ case "$1" in
                 echo "Specify command"
             else
                 command="$3"
-                for node in $NODES; do
+                for node in "${NODES[@]}"; do
                     send_command $session $node "$command"
                 done
             fi
@@ -251,7 +251,7 @@ case "$1" in
             echo "Specify session name"
         else
             session=$2
-            for node in $NODES; do
+            for node in "${NODES[@]}"; do
                 check_status $session $node
             done
         fi
